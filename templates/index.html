@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Text Overlay</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #4f46e5;
+      margin-bottom: 0.25rem;
+    }
+
+    p.subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 2rem;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #c7d2fe;
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: #f8f7ff;
+      margin-bottom: 1.25rem;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+
+    .drop-zone input[type="file"] {
+      display: none;
+    }
+
+    .drop-zone svg {
+      width: 2.5rem;
+      height: 2.5rem;
+      color: #818cf8;
+      margin-bottom: 0.5rem;
+    }
+
+    .drop-zone p { color: #555; font-size: 0.9rem; }
+    .drop-zone span { color: #4f46e5; font-weight: 600; cursor: pointer; }
+
+    .preview-wrap {
+      display: none;
+      margin-bottom: 1.25rem;
+    }
+
+    .preview-wrap img {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: #374151;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 1.25rem;
+    }
+
+    input[type="text"]:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px #eef2ff; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 0.75rem;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button[type="submit"]:hover { background: #4338ca; }
+    button[type="submit"]:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    .status {
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      text-align: center;
+      min-height: 1.25rem;
+      color: #dc2626;
+    }
+
+    .download-wrap {
+      display: none;
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+
+    .download-wrap img {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 1rem;
+    }
+
+    .download-wrap a {
+      display: inline-block;
+      padding: 0.6rem 1.5rem;
+      background: #10b981;
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .download-wrap a:hover { background: #059669; }
+  </style>
+</head>
+<body>
+  <h1>Image Text Overlay</h1>
+  <p class="subtitle">Upload an image, add your text, and download the result.</p>
+
+  <div class="card">
+    <form id="overlayForm">
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="imageInput" name="image" accept="image/*" required />
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+        </svg>
+        <p><span id="dropLabel">Click to upload</span> or drag &amp; drop</p>
+        <p style="color:#9ca3af;font-size:0.8rem;margin-top:0.25rem;">PNG, JPG, GIF, WEBP up to 16 MB</p>
+      </div>
+
+      <!-- Image preview -->
+      <div class="preview-wrap" id="previewWrap">
+        <img id="previewImg" src="" alt="Preview" />
+      </div>
+
+      <!-- Text input -->
+      <label class="field-label" for="textInput">Text to overlay</label>
+      <input type="text" id="textInput" name="text" placeholder="Enter your text…" required />
+
+      <button type="submit" id="submitBtn">Apply Text &amp; Download</button>
+    </form>
+
+    <p class="status" id="statusMsg"></p>
+
+    <!-- Result -->
+    <div class="download-wrap" id="downloadWrap">
+      <img id="resultImg" src="" alt="Result" />
+      <a id="downloadLink" href="#" download="updated_image.png">⬇ Download Image</a>
+    </div>
+  </div>
+
+  <script>
+    const dropZone   = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    const previewWrap = document.getElementById('previewWrap');
+    const previewImg  = document.getElementById('previewImg');
+    const dropLabel   = document.getElementById('dropLabel');
+    const form        = document.getElementById('overlayForm');
+    const submitBtn   = document.getElementById('submitBtn');
+    const statusMsg   = document.getElementById('statusMsg');
+    const downloadWrap = document.getElementById('downloadWrap');
+    const resultImg    = document.getElementById('resultImg');
+    const downloadLink = document.getElementById('downloadLink');
+
+    // Click on drop zone triggers file input
+    dropZone.addEventListener('click', () => imageInput.click());
+
+    // Drag-and-drop styling
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+
+    imageInput.addEventListener('change', () => {
+      if (imageInput.files[0]) setFile(imageInput.files[0]);
+    });
+
+    function setFile(file) {
+      // Transfer to the real input via DataTransfer
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      imageInput.files = dt.files;
+
+      dropLabel.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        previewWrap.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+      downloadWrap.style.display = 'none';
+      statusMsg.textContent = '';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusMsg.textContent = '';
+      downloadWrap.style.display = 'none';
+
+      const file = imageInput.files[0];
+      const text = document.getElementById('textInput').value.trim();
+
+      if (!file) { statusMsg.textContent = 'Please select an image.'; return; }
+      if (!text) { statusMsg.textContent = 'Please enter some text.'; return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing…';
+
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('text', text);
+
+      try {
+        const response = await fetch('/process', { method: 'POST', body: formData });
+
+        if (!response.ok) {
+          const msg = await response.text();
+          statusMsg.textContent = msg || 'An error occurred.';
+          return;
+        }
+
+        const blob = await response.blob();
+        const url  = URL.createObjectURL(blob);
+        resultImg.src = url;
+        downloadLink.href = url;
+        downloadWrap.style.display = 'block';
+      } catch (err) {
+        statusMsg.textContent = 'Network error. Please try again.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Apply Text & Download';
+      }
+    });
+  </script>
+</body>
+</html>
